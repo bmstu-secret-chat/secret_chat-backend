@@ -21,7 +21,8 @@ def create_view(request):
             status=status.HTTP_201_CREATED
         )
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    errors = [str(e) for field_errors in serializer.errors.values() for e in field_errors]
+    return Response({"error": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

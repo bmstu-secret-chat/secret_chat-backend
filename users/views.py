@@ -1,10 +1,13 @@
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, get_user_model
+from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .serializers import UserSerializer
+
+User = get_user_model()
 
 
 @api_view(['POST'])
@@ -42,3 +45,29 @@ def check_view(request):
 
     serializer = UserSerializer(user)
     return Response({"message": "Данные верны.", "user": serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def exists_view(request):
+    """
+    Проверка существования пользователя по id.
+    """
+    user_id = request.GET.get("user_id")
+
+    if not user_id:
+        return Response({"error": "Параметр user_id не предоставлен"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if User.objects.filter(id=user_id).exists():
+        return Response({"user_id": user_id}, status=status.HTTP_200_OK)
+
+    return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def user_view(request, user_id):
+    """
+    Получение пользователя по id.
+    """
+    user = get_object_or_404(User, id=user_id)
+    serializer = UserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)

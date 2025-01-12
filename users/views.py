@@ -1,5 +1,4 @@
 from django.contrib.auth import authenticate, get_user_model
-from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -68,6 +67,9 @@ def user_view(request, user_id):
     """
     Получение пользователя по id.
     """
-    user = get_object_or_404(User, id=user_id)
-    serializer = UserSerializer(user)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    try:
+        user = User.objects.get(id=user_id)
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)

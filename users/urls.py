@@ -8,6 +8,6 @@ urlpatterns = [
     path("create/", create_view, name="create"),
     path("check/", check_view, name="check"),
     path("exists/", exists_view, name="exists"),
-    path("user/<uuid:user_id>/", user_view, name="user"),
+    path("user/<user_id>/", user_view, name="user"),
     path("user/", profile_view, name="profile"),
 ]

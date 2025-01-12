@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth import authenticate, get_user_model
 
 from rest_framework import status
@@ -70,6 +72,11 @@ def user_view(request, user_id):
     """
     Получение пользователя по id.
     """
+    try:
+        user_id = uuid.UUID(user_id)
+    except ValueError:
+        return Response({"error": "id пользователя должно быть uuid"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         user = User.objects.get(id=user_id)
         serializer = UserSerializer(user)

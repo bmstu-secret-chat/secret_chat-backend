@@ -42,6 +42,9 @@ def check_view(request):
     if not user:
         return Response({"error": "Неверные учетные данные."}, status=status.HTTP_401_UNAUTHORIZED)
 
+    if user.is_deleted:
+        return Response({"error": "Пользователь удалён."}, status=status.HTTP_403_FORBIDDEN)
+
     serializer = UserSerializer(user)
     return Response({"message": "Данные верны.", "user": serializer.data}, status=status.HTTP_200_OK)
 
@@ -73,3 +76,31 @@ def user_view(request, user_id):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['PUT', 'DELETE'])
+def profile_view(request):
+    """
+    Обновление или удаление профиля пользователя.
+    """
+    user_id = request.user_id
+    user = User.objects.get(id=user_id)
+
+    if request.method == 'PUT':
+        forbidden_fields = {"id", "password"}
+
+        if any(field in forbidden_fields for field in request.data.keys()):
+            return Response({"error": "Нельзя изменять поля id, password"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response({}, status=status.HTTP_200_OK)
+
+        errors = [str(e) for field_errors in serializer.errors.values() for e in field_errors]
+        return Response({"error": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+    elif request.method == 'DELETE':
+        user.delete()
+        return Response({}, status=status.HTTP_200_OK)

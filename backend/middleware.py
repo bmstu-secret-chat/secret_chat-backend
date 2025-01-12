@@ -38,8 +38,8 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
             return JsonResponse({"error": "Access токен не предоставлен"}, status=status.HTTP_401_UNAUTHORIZED)
 
         url = f"{NGINX_URL}{AUTH_PATH}/check/"
-        params = {"access": access_token}
-        response = requests.get(url, params, verify=False)
+        cookies = {"access": access_token}
+        response = requests.get(url, cookies=cookies, verify=False)
 
         if response.status_code == 200:
             data = response.json()

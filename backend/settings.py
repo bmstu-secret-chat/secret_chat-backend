@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'chats',
+    'storage',
     'users',
 ]
 
@@ -129,4 +130,4 @@ AUTH_USER_MODEL = 'users.User'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_ACCESS_KEY_ID = env('MINIO_ROOT_USER')
 AWS_SECRET_ACCESS_KEY = env('MINIO_ROOT_PASSWORD')
-AWS_STORAGE_BUCKET_NAME = 'avatars'
+AWS_STORAGE_BUCKET_NAME = 'images'

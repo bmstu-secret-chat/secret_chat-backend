@@ -27,5 +27,19 @@ services:
       - "${DATABASE_PORT}:${DATABASE_PORT}"
     restart: always
 
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "${MINIO_PORT_API}:${MINIO_PORT_API}"
+      - "${MINIO_PORT_CONSOLE}:${MINIO_PORT_CONSOLE}"
+    env_file:
+      - .env
+    command: server /data --console-address ":${MINIO_PORT_CONSOLE}"
+    volumes:
+      - minio_data:/data
+    restart: always
+
 volumes:
   postgres_data:
+  minio_data:

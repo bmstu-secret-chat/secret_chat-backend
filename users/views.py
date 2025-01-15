@@ -61,10 +61,12 @@ def exists_view(request):
     if not user_id:
         return Response({"error": "Параметр user_id не предоставлен"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(id=user_id).exists():
-        return Response({"user_id": user_id}, status=status.HTTP_200_OK)
-
-    return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        user = User.objects.get(id=user_id)
+        serializer = UserSerializer(user)
+        return Response({"user": serializer.data}, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])

@@ -9,7 +9,15 @@ class UserSerializer(serializers.ModelSerializer):
     """
     class Meta:
         model = User
-        fields = "__all__"
+        fields = (
+            "id",
+            "username",
+            "phone",
+            "email",
+            "avatar",
+            "about_me",
+            "birthday",
+        )
         extra_kwargs = {
             "password": {"write_only": True},
         }
@@ -20,6 +28,22 @@ class UserSerializer(serializers.ModelSerializer):
         """
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Пользователь с таким именем уже существует.")
+        return value
+
+    def validate_phone(self, value):
+        """
+        Валидация номера телефона.
+        """
+        if User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError("Пользователь с таким номером телефона уже существует.")
+        return value
+
+    def validate_email(self, value):
+        """
+        Валидация почты.
+        """
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Пользователь с такой почтой уже существует.")
         return value
 
     def create(self, validated_data):

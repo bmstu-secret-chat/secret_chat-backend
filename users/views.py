@@ -26,7 +26,7 @@ def create_view(request):
         )
 
     errors = [str(e) for field_errors in serializer.errors.values() for e in field_errors]
-    return Response({"error": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"error": "\n".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -103,7 +103,7 @@ def user_view(request, user_id):
             return Response({}, status=status.HTTP_200_OK)
 
         errors = [str(e) for field_errors in serializer.errors.values() for e in field_errors]
-        return Response({"error": " ".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "\n".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
         current_user.delete()

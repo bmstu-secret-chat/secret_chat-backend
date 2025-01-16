@@ -107,4 +107,7 @@ def user_view(request, user_id):
 
     elif request.method == 'DELETE':
         current_user.delete()
-        return Response({}, status=status.HTTP_200_OK)
+        response = Response({}, status=status.HTTP_200_OK)
+        response.delete_cookie("access")
+        response.delete_cookie("refresh")
+        return response

@@ -1,7 +1,10 @@
+import json
 import uuid
 
 from django.contrib.auth import authenticate, get_user_model
 
+import environ
+import requests
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -9,6 +12,12 @@ from rest_framework.response import Response
 from .serializers import UserSerializer
 
 User = get_user_model()
+
+env = environ.Env()
+
+NGINX_URL = env("NGINX_URL")
+
+AUTH_PATH = "/api/auth"
 
 
 @api_view(['POST'])
@@ -106,7 +115,17 @@ def user_view(request, user_id):
         return Response({"error": "\n".join(errors)}, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == 'DELETE':
-        current_user.delete()
+        refresh_token = request.COOKIES.get("refresh")
+
+        url = f"{NGINX_URL}{AUTH_PATH}/logout/"
+        cookies = {"refresh": refresh_token}
+        response = requests.post(url, cookies=cookies, verify=False)
+
+        if response.status_code == 200:
+            current_user.delete()
+        else:
+            return Response(json.loads(response.text), status=response.status_code)
+
         response = Response({}, status=status.HTTP_200_OK)
         response.delete_cookie("access")
         response.delete_cookie("refresh")

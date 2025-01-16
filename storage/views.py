@@ -1,5 +1,7 @@
 import base64
 import io
+import json
+import os
 import uuid
 
 from django.conf import settings
@@ -52,6 +54,12 @@ def upload_image_view(request):
         s3.head_bucket(Bucket=bucket_name)
     except ClientError:
         s3.create_bucket(Bucket=bucket_name)
+        policy_path = os.path.join(settings.BASE_DIR, "bucket_policy.json")
+
+        with open(policy_path) as policy_file:
+            bucket_policy = json.load(policy_file)
+
+        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(bucket_policy))
 
     s3.upload_fileobj(file_bytes, bucket_name, filename)
 

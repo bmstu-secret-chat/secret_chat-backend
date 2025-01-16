@@ -1,6 +1,10 @@
+import re
+
+from django.contrib.auth import get_user_model
+
 from rest_framework import serializers
 
-from .models import User
+User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -35,6 +39,9 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Валидация номера телефона.
         """
+        if not re.fullmatch(r"8\d{10}", value):
+            raise serializers.ValidationError("Номер телефона должен начинаться с 8 и содержать 11 цифр.")
+
         if User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("Пользователь с таким номером телефона уже существует.")
         return value

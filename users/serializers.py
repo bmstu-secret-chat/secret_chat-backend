@@ -31,18 +31,27 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Валидация имени пользователя.
         """
-        if self.instance and value != self.instance.username and User.objects.filter(username=value).exists():
+        if self.instance:
+            if User.objects.exclude(id=self.instance.id).filter(username=value).exists():
+                raise serializers.ValidationError("Пользователь с таким именем уже существует.")
+
+        elif User.objects.filter(username=value).exists():
             raise serializers.ValidationError("Пользователь с таким именем уже существует.")
+
         return value
 
     def validate_phone(self, value):
         """
         Валидация номера телефона.
         """
-        if self.instance and value != self.instance.phone and not re.fullmatch(r"8\d{10}", value):
+        if not re.fullmatch(r"8\d{10}", value):
             raise serializers.ValidationError("Номер телефона должен начинаться с 8 и содержать 11 цифр.")
 
-        if self.instance and value != self.instance.phone and User.objects.filter(phone=value).exists():
+        if self.instance:
+            if User.objects.exclude(id=self.instance.id).filter(phone=value).exists():
+                raise serializers.ValidationError("Пользователь с таким номером телефона уже существует.")
+
+        elif User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("Пользователь с таким номером телефона уже существует.")
 
         return value
@@ -51,8 +60,13 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Валидация почты.
         """
-        if self.instance and value != self.instance.email and User.objects.filter(email=value).exists():
+        if self.instance:
+            if User.objects.exclude(id=self.instance.id).filter(email=value).exists():
+                raise serializers.ValidationError("Пользователь с такой почтой уже существует.")
+
+        elif User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Пользователь с такой почтой уже существует.")
+
         return value
 
     def create(self, validated_data):

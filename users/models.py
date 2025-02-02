@@ -19,6 +19,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     birthday = models.CharField(max_length=10, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
+    sync_at = models.DateTimeField(blank=True, null=True)
 
     objects = UserManager()
 

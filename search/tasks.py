@@ -24,5 +24,5 @@ def sync_users_to_elasticsearch():
         User.objects.filter(id__in=(user.id for user in users)).update(sync_at=now())
 
         for user in users:
-            user_document = UserDocument(meta={"id": user.id}, username=user.username)
+            user_document = UserDocument(meta={"id": user.id}, username=user.username, avatar=user.avatar)
             user_document.save()

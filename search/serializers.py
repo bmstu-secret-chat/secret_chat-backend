@@ -12,7 +12,7 @@ class UserDocumentSerializer(DocumentSerializer):
 
     class Meta:
         document = UserDocument
-        fields = ["id", "username"]
+        fields = ["id", "username", "avatar"]
 
     def get_id(self, obj):
         return obj.meta.id

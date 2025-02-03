@@ -14,6 +14,7 @@ class UserDocument(Document):
             "raw": fields.KeywordField(),
         }
     )
+    avatar = fields.KeywordField(attr="avatar")
 
     class Index:
         name = "users"

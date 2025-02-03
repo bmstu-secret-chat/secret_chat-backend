@@ -14,7 +14,9 @@ services:
       - "${PORT}:${PORT}"
     depends_on:
       - db
+      - elasticsearch
     restart: always
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:${PORT}"
 
   db:
     image: postgres:latest
@@ -40,6 +42,55 @@ services:
       - minio_data:/data
     restart: always
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    container_name: elasticsearch
+    env_file:
+      - .env
+    environment:
+      - discovery.type=${ELASTIC_DISCOVERY_TYPE}
+      - ES_JAVA_OPTS=${ELASTIC_MEM_OPTS}
+      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED}
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTIC_PORT}:${ELASTIC_PORT}"
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: redis_backend
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:${REDIS_PORT}"
+    restart: always
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery
+    command: celery -A backend worker --loglevel=info
+    depends_on:
+      - db
+      - elasticsearch
+    env_file:
+      - .env
+    restart: always
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: celery-beat
+    command: celery -A backend beat --loglevel=info
+    depends_on:
+      - db
+      - elasticsearch
+    env_file:
+      - .env
+    restart: always
+
 volumes:
   postgres_data:
   minio_data:
+  elasticsearch_data:

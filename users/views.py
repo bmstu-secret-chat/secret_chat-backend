@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.contrib.auth import authenticate, get_user_model
+from django.utils.timezone import now
 
 import environ
 import requests
@@ -130,3 +131,26 @@ def user_view(request, user_id):
         response.delete_cookie("access")
         response.delete_cookie("refresh")
         return response
+
+
+@api_view(['PATCH'])
+def status_view(request):
+    """
+    Обновляет статус пользователя.
+    """
+    user_id = request.data.get("user_id")
+    is_online = request.data.get("is_online")
+
+    if user_id is None or is_online is None:
+        return Response({"error": "Отсутствуют необходимые параметры"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.filter(id=user_id)
+    if not user.exists():
+        return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    if is_online:
+        user.update(is_online=is_online)
+    else:
+        user.update(is_online=is_online, last_online=int(now().timestamp()))
+
+    return Response({"message": "Статус пользователя обновлён"}, status=status.HTTP_200_OK)

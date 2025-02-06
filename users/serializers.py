@@ -11,6 +11,8 @@ class UserSerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели User.
     """
+    last_online = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -22,10 +24,17 @@ class UserSerializer(serializers.ModelSerializer):
             "avatar",
             "about_me",
             "birthday",
+            "is_online",
+            "last_online",
         )
         extra_kwargs = {
             "password": {"write_only": True},
         }
+
+    def get_last_online(self, obj):
+        if obj.last_online:
+            return str(obj.last_online)
+        return None
 
     def validate_username(self, value):
         """

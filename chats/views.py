@@ -16,7 +16,7 @@ def create_secret_chat_view(request):
     """
     Создание секретного чата.
     """
-    with_user_id = request.POST.get("with_user_id")
+    with_user_id = request.data.get("with_user_id")
 
     if not with_user_id:
         return Response({"error": "with_user_id отсутствует"}, status=status.HTTP_400_BAD_REQUEST)

@@ -14,5 +14,3 @@ COPY . /app
 RUN pip3 install --upgrade pip &&  pip3 install -r ./requirements.txt --no-cache-dir
 
 EXPOSE ${PORT}
-
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:${PORT}"]

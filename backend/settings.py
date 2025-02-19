@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import environ
+from celery.schedules import crontab
 
 env = environ.Env()
 
@@ -30,8 +31,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_elasticsearch_dsl',
     'rest_framework',
     'chats',
+    'search',
     'storage',
     'users',
 ]
@@ -131,3 +134,22 @@ DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 AWS_ACCESS_KEY_ID = env('MINIO_ROOT_USER')
 AWS_SECRET_ACCESS_KEY = env('MINIO_ROOT_PASSWORD')
 AWS_STORAGE_BUCKET_NAME = 'images'
+
+# Elasticsearch
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': f"{env('ELASTIC_URL')}:{env('ELASTIC_PORT')}",
+    },
+}
+
+# Celery
+CELERY_BROKER_URL = f"redis://{env('REDIS_HOST')}:{env('REDIS_PORT')}/0"
+CELERY_RESULT_BACKEND = f"redis://{env('REDIS_HOST')}:{env('REDIS_PORT')}/0"
+
+# Celery Beat
+CELERY_BEAT_SCHEDULE = {
+    'sync-users-to-elasticsearch': {
+        'task': 'search.tasks.sync_users_to_elasticsearch',
+        'schedule': crontab(minute='*/5'),
+    },
+}

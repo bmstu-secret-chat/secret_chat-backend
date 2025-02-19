@@ -11,6 +11,8 @@ env = environ.Env(
     NGINX_URL=(str),
 )
 
+INTERNAL_SECRET_KEY = env("INTERNAL_SECRET_KEY")
+
 NGINX_URL = env("NGINX_URL")
 
 AUTH_PATH = "/api/auth"
@@ -28,9 +30,21 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
         "/users/exists/",
     ]
 
+    ALLOWED_SECRET_PATHS = [
+        "/users/status/",
+    ]
+
     def process_request(self, request):
         if any(request.path_info.startswith(BACK_PATH + path) for path in self.ALLOWED_PATHS):
             return None
+
+        if any(request.path_info.startswith(BACK_PATH + path) for path in self.ALLOWED_SECRET_PATHS):
+            secret_key = request.headers.get("X-Internal-Secret")
+
+            if secret_key == INTERNAL_SECRET_KEY:
+                return None
+            else:
+                return JsonResponse({"error": "Отсутствует секретный ключ"}, status=status.HTTP_403_FORBIDDEN)
 
         access_token = request.COOKIES.get("access")
 

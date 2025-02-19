@@ -1,7 +1,9 @@
 from django.urls import path
 
-from .views import get_chats
+from .views import create_secret_chat_view
+
+app_name = "chats"
 
 urlpatterns = [
-    path('all/', get_chats, name='get_chats'),
+    path("secret-chat/create/", create_secret_chat_view, name="create-secret-chat"),
 ]

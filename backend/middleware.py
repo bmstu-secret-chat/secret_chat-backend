@@ -7,9 +7,7 @@ import environ
 import requests
 from rest_framework import status
 
-env = environ.Env(
-    NGINX_URL=(str),
-)
+env = environ.Env()
 
 INTERNAL_SECRET_KEY = env("INTERNAL_SECRET_KEY")
 
@@ -17,28 +15,27 @@ NGINX_URL = env("NGINX_URL")
 
 AUTH_PATH = "/api/auth"
 
-BACK_PATH = "/api/backend"
-
 
 class TokenAuthenticationMiddleware(MiddlewareMixin):
     """
     Middleware для проверки авторизации пользователя.
     """
     ALLOWED_PATHS = [
-        "/users/create/",
-        "/users/check/",
-        "/users/exists/",
+        "/metrics",
+        "/api/backend/users/create/",
+        "/api/backend/users/check/",
+        "/api/backend/users/exists/",
     ]
 
     ALLOWED_SECRET_PATHS = [
-        "/users/status/",
+        "/api/backend/users/status/",
     ]
 
     def process_request(self, request):
-        if any(request.path_info.startswith(BACK_PATH + path) for path in self.ALLOWED_PATHS):
+        if any(request.path_info.startswith(path) for path in self.ALLOWED_PATHS):
             return None
 
-        if any(request.path_info.startswith(BACK_PATH + path) for path in self.ALLOWED_SECRET_PATHS):
+        if any(request.path_info.startswith(path) for path in self.ALLOWED_SECRET_PATHS):
             secret_key = request.headers.get("X-Internal-Secret")
 
             if secret_key == INTERNAL_SECRET_KEY:

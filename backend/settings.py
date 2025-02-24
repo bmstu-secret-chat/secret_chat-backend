@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_elasticsearch_dsl',
+    'django_prometheus',
     'rest_framework',
     'chats',
     'search',
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -48,6 +50,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'backend.middleware.TokenAuthenticationMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -151,5 +154,9 @@ CELERY_BEAT_SCHEDULE = {
     'sync-users-to-elasticsearch': {
         'task': 'search.tasks.sync_users_to_elasticsearch',
         'schedule': crontab(minute='*/5'),
+    },
+    'update_unique_users': {
+        'task': 'users.tasks.update_unique_users',
+        'schedule': crontab(hour=0, minute=0),
     },
 }

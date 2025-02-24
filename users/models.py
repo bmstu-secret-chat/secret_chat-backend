@@ -34,3 +34,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     def delete(self, using=None, keep_parents=False):
         self.is_deleted = True
         self.save()
+
+
+class UniqueUserStats(models.Model):
+    """
+    Модель для сбора статистики уникальных пользователей.
+    """
+    date = models.DateField(unique=True)
+    daily_users = models.IntegerField(default=0)
+    monthly_users = models.IntegerField(default=0)

@@ -6,10 +6,12 @@ from django.utils.timezone import now
 
 import environ
 import requests
+from django_prometheus.exports import ExportToDjangoView
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from .metrics import update_metrics
 from .serializers import UserSerializer
 
 User = get_user_model()
@@ -154,3 +156,9 @@ def status_view(request):
         user.update(is_online=is_online, last_online=int(now().timestamp()))
 
     return Response({"message": "Статус пользователя обновлён"}, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def metrics_view(request):
+    update_metrics()
+    return ExportToDjangoView(request)

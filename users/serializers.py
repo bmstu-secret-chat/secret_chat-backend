@@ -83,3 +83,12 @@ class UserSerializer(serializers.ModelSerializer):
         Создание пользователя.
         """
         return User.objects.create_user(**validated_data)
+
+
+class ShortUserSerializer(serializers.ModelSerializer):
+    """
+    Короткий сериализатор для модели User.
+    """
+    class Meta:
+        model = User
+        fields = ("id", "username", "avatar")

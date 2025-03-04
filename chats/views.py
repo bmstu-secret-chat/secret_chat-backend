@@ -8,9 +8,21 @@ from rest_framework.response import Response
 
 from .choices import ChatTypeChoices
 from .models import Chat
+from .serializers import ChatSerializer
 from .utils import create_secret_chat
 
 User = get_user_model()
+
+
+@api_view(["GET"])
+def chats_view(request):
+    """
+    Получение всех чатов пользователя.
+    """
+    user = User.objects.get(id=request.user_id)
+    chats = user.get_chats()
+    serializer = ChatSerializer(chats, context={"request": request}, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])
@@ -51,6 +63,49 @@ def create_secret_chat_view(request):
     return Response({}, status=status.HTTP_201_CREATED)
 
 
+@api_view(["POST"])
+def create_chat_view(request):
+    """
+    Создание чата.
+    """
+    chat_id = uuid.uuid4()
+    with_user_id = request.data.get("with_user_id")
+    chat_type = ChatTypeChoices.DEFAULT
+
+    if not with_user_id:
+        return Response({"error": "with_user_id отсутствует"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        uuid.UUID(with_user_id)
+    except ValueError:
+        return Response({"error": "with_user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        with_user = User.objects.get(id=with_user_id)
+    except User.DoesNotExist:
+        return Response({"error": f"Пользователь с id = {with_user_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    user = User.objects.get(id=request.user_id)
+    chat = Chat.objects.create(id=chat_id, type=chat_type)
+    chat.users.add(user, with_user)
+
+    return Response({"dialog_id": chat_id}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+def chat_view(request, chat_id):
+    """
+    Получение чата.
+    """
+    try:
+        chat = Chat.objects.get(id=chat_id)
+    except Chat.DoesNotExist:
+        return Response({"error": f"Чат с таким id = {chat_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ChatSerializer(chat, context={"request": request})
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 @api_view(["GET"])
 def get_chat_users_view(request, chat_id):
     """
@@ -66,9 +121,9 @@ def get_chat_users_view(request, chat_id):
 
 
 @api_view(["DELETE"])
-def chat_view(request, chat_id):
+def delete_chat_view(request, chat_id):
     """
-    Удаление чата.
+    Удаление чата из реалтайма.
     """
     try:
         chat = Chat.objects.get(id=chat_id)

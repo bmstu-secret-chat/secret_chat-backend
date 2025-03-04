@@ -3,6 +3,9 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
+from chats.choices import ChatTypeChoices
+from chats.models import Chat
+
 from .managers import UserManager
 
 
@@ -34,6 +37,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     def delete(self, using=None, keep_parents=False):
         self.is_deleted = True
         self.save()
+
+    def get_chats(self):
+        """
+        Получить все чаты пользователя.
+        """
+        return Chat.objects.filter(users=self)
+
+    def get_secret_chats(self):
+        """
+        Получить все секретные чаты пользователя.
+        """
+        return Chat.objects.filter(users=self, type=ChatTypeChoices.SECRET)
 
 
 class UniqueUserStats(models.Model):

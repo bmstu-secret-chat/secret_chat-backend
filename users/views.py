@@ -162,3 +162,17 @@ def status_view(request):
 def metrics_view(request):
     update_metrics()
     return ExportToDjangoView(request)
+
+
+@api_view(['GET'])
+def secret_chats_view(request, user_id):
+    """
+    Получение всех секретных чатов пользователя.
+    """
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким id не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    secret_chat_ids = user.get_secret_chats().values_list("id", flat=True)
+    return Response(secret_chat_ids, status=status.HTTP_200_OK)

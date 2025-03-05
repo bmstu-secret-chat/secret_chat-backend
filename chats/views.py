@@ -1,14 +1,15 @@
 import uuid
 
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .choices import ChatTypeChoices
-from .models import Chat
-from .serializers import ChatSerializer
+from .models import Chat, Message
+from .serializers import ChatSerializer, MessageSerializer
 from .utils import create_secret_chat
 
 User = get_user_model()
@@ -30,6 +31,7 @@ def create_secret_chat_view(request):
     """
     Создание секретного чата.
     """
+    user_id = request.user_id
     chat_id = uuid.uuid4()
     with_user_id = request.data.get("with_user_id")
     chat_type = ChatTypeChoices.SECRET
@@ -42,6 +44,9 @@ def create_secret_chat_view(request):
     except ValueError:
         return Response({"error": "with_user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
 
+    if user_id == with_user_id:
+        return Response({"error": "Нельзя создать чат с самим собой"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         with_user = User.objects.get(id=with_user_id)
     except User.DoesNotExist:
@@ -50,7 +55,7 @@ def create_secret_chat_view(request):
     if not with_user.is_online:
         return Response({"error": "Собеседник не в сети"}, status=status.HTTP_423_LOCKED)
 
-    user = User.objects.get(id=request.user_id)
+    user = User.objects.get(id=user_id)
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)
 
@@ -68,6 +73,7 @@ def create_chat_view(request):
     """
     Создание чата.
     """
+    user_id = request.user_id
     chat_id = uuid.uuid4()
     with_user_id = request.data.get("with_user_id")
     chat_type = ChatTypeChoices.DEFAULT
@@ -80,12 +86,15 @@ def create_chat_view(request):
     except ValueError:
         return Response({"error": "with_user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
 
+    if user_id == with_user_id:
+        return Response({"error": "Нельзя создать чат с самим собой"}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
         with_user = User.objects.get(id=with_user_id)
     except User.DoesNotExist:
         return Response({"error": f"Пользователь с id = {with_user_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-    user = User.objects.get(id=request.user_id)
+    user = User.objects.get(id=user_id)
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)
 
@@ -118,6 +127,85 @@ def get_chat_users_view(request, chat_id):
 
     user_ids = chat.users.values_list("id", flat=True)
     return Response(user_ids, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])
+def messages_view(request, dialog_id):
+    """
+    Получение сообщений чата.
+    """
+    first_message_index = request.GET.get("first_message_index")
+    count = request.GET.get("count")
+
+    try:
+        first_message_index = int(first_message_index) - 1
+        count = int(count)
+
+        if count <= 0:
+            return Response({"error": "count должен быть больше нуля"})
+
+        if first_message_index < 0:
+            first_message_index = 0
+
+    except (TypeError, ValueError):
+        return Response({"error": "Параметры должны быть типа int"}, status=status.HTTP_400_BAD_REQUEST)
+
+    last_message_index = first_message_index + count
+
+    messages = Message.objects.filter(dialog_id=dialog_id).order_by("serial_number")[
+        first_message_index:last_message_index
+    ]
+    serializer = MessageSerializer(messages, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def message_view(request, dialog_id):
+    """
+    Создание сообщения.
+    """
+    id = request.data.get("id")
+    payload = request.data.get("payload")
+
+    if not payload:
+        return Response({"error": "Не переданы данные сообщения"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user_id = payload.get("user_id")
+    chat_type = payload.get("chat_type")
+    message = payload.get("message")
+
+    if not user_id:
+        return Response({"error": "Не передан user_id"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        uuid.UUID(user_id)
+    except ValueError:
+        return Response({"error": "user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not message:
+        return Response({"error": "Не передано сообщение"}, status=status.HTTP_400_BAD_REQUEST)
+
+    content = message.get("content")
+    time = message.get("time")
+
+    if chat_type:
+        try:
+            dialog_type_model = ContentType.objects.get_for_model(Chat)
+            dialog_id = dialog_id
+        except Chat.DoesNotExist:
+            return Response({"error": "Чат с таким id не существует"}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({"error": "chat_id не передан"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": f"Пользователь с id = {user_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    Message.objects.create(
+        id=id, user=user, dialog_type=dialog_type_model, dialog_id=dialog_id, content=content, time_create=time
+    )
+    return Response(status=status.HTTP_201_CREATED)
 
 
 @api_view(["DELETE"])

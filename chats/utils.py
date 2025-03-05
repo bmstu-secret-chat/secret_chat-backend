@@ -1,3 +1,5 @@
+import time
+
 import environ
 import requests
 
@@ -8,6 +10,10 @@ INTERNAL_SECRET_KEY = env("INTERNAL_SECRET_KEY")
 NGINX_URL = env("NGINX_URL")
 
 REALTIME_PATH = "/api/realtime"
+
+
+def get_unix_timestamp():
+    return int(time.time())
 
 
 def create_secret_chat(chat_id, user_id, with_user_id, chat_type):

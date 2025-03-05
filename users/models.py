@@ -42,7 +42,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         """
         Получить все чаты пользователя.
         """
-        return Chat.objects.filter(users=self)
+        return Chat.objects.filter(users=self).order_by("-last_action_time")
 
     def get_secret_chats(self):
         """

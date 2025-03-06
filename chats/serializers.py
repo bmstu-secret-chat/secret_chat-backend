@@ -17,7 +17,7 @@ class ChatSerializer(serializers.ModelSerializer):
         fields = ("id", "user", "type", "last_action_time")
 
     def get_user(self, obj):
-        request_user = self.context["request"].user
+        request_user = self.context["user"]
         users = obj.users.all()
         for user in users:
             if user != request_user:

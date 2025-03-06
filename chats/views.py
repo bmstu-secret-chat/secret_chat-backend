@@ -22,7 +22,7 @@ def chats_view(request):
     """
     user = User.objects.get(id=request.user_id)
     chats = user.get_chats()
-    serializer = ChatSerializer(chats, context={"request": request}, many=True)
+    serializer = ChatSerializer(chats, context={"user": user}, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -98,7 +98,8 @@ def create_chat_view(request):
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)
 
-    return Response({"dialog_id": chat_id}, status=status.HTTP_201_CREATED)
+    serializer = ChatSerializer(chat, context={"user": user})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET"])
@@ -106,12 +107,15 @@ def chat_view(request, chat_id):
     """
     Получение чата.
     """
+    user_id = request.user_id
+    user = User.objects.get(id=user_id)
+
     try:
         chat = Chat.objects.get(id=chat_id)
     except Chat.DoesNotExist:
         return Response({"error": f"Чат с таким id = {chat_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ChatSerializer(chat, context={"request": request})
+    serializer = ChatSerializer(chat, context={"user": user})
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 

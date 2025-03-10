@@ -5,12 +5,13 @@ from django.contrib.contenttypes.models import ContentType
 
 from rest_framework import status
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from .choices import ChatTypeChoices
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
-from .utils import create_secret_chat
+from .utils import create_secret_chat, validate_chat_creation
 
 User = get_user_model()
 
@@ -36,21 +37,10 @@ def create_secret_chat_view(request):
     with_user_id = request.data.get("with_user_id")
     chat_type = ChatTypeChoices.SECRET
 
-    if not with_user_id:
-        return Response({"error": "with_user_id отсутствует"}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        uuid.UUID(with_user_id)
-    except ValueError:
-        return Response({"error": "with_user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if user_id == with_user_id:
-        return Response({"error": "Нельзя создать чат с самим собой"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        with_user = User.objects.get(id=with_user_id)
-    except User.DoesNotExist:
-        return Response({"error": f"Пользователь с id = {with_user_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
+        with_user = validate_chat_creation(user_id, with_user_id)
+    except ValidationError as e:
+        return Response({"error": e.detail.get("error")}, status=e.detail.get("status"))
 
     if not with_user.is_online:
         return Response({"error": "Собеседник не в сети"}, status=status.HTTP_423_LOCKED)
@@ -78,21 +68,10 @@ def create_chat_view(request):
     with_user_id = request.data.get("with_user_id")
     chat_type = ChatTypeChoices.DEFAULT
 
-    if not with_user_id:
-        return Response({"error": "with_user_id отсутствует"}, status=status.HTTP_400_BAD_REQUEST)
-
     try:
-        uuid.UUID(with_user_id)
-    except ValueError:
-        return Response({"error": "with_user_id должен быть в формате uuid"}, status=status.HTTP_400_BAD_REQUEST)
-
-    if user_id == with_user_id:
-        return Response({"error": "Нельзя создать чат с самим собой"}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        with_user = User.objects.get(id=with_user_id)
-    except User.DoesNotExist:
-        return Response({"error": f"Пользователь с id = {with_user_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
+        with_user = validate_chat_creation(user_id, with_user_id)
+    except ValidationError as e:
+        return Response({"error": e.detail.get("error")}, status=e.detail.get("status"))
 
     user = User.objects.get(id=user_id)
     chat = Chat.objects.create(id=chat_id, type=chat_type)

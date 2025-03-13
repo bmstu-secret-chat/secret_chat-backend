@@ -64,7 +64,6 @@ def create_chat_view(request):
     Создание чата.
     """
     user_id = request.user_id
-    chat_id = uuid.uuid4()
     with_user_id = request.data.get("with_user_id")
     chat_type = ChatTypeChoices.DEFAULT
 
@@ -74,6 +73,14 @@ def create_chat_view(request):
         return Response({"error": e.detail.get("error")}, status=e.detail.get("status"))
 
     user = User.objects.get(id=user_id)
+
+    existing_chat = Chat.objects.filter(type=chat_type, users__id=user_id).filter(users__id=with_user_id).first()
+
+    if existing_chat:
+        serializer = ChatSerializer(existing_chat, context={"user": user})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    chat_id = uuid.uuid4()
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)
 

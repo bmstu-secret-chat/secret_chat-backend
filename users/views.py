@@ -12,7 +12,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .metrics import update_metrics
-from .serializers import UserSerializer
+from .models import PublicKey
+from .serializers import PublicKeySerializer, UserSerializer
 
 User = get_user_model()
 
@@ -176,3 +177,31 @@ def secret_chats_view(request, user_id):
 
     secret_chat_ids = user.get_secret_chats().values_list("id", flat=True)
     return Response(secret_chat_ids, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def key_view(request, user_id):
+    """
+    Получение и сохранение публичного ключа пользователя.
+    """
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким id не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    match request.method:
+        case 'GET':
+            try:
+                public_key = PublicKey.objects.get(user=user)
+                serializer = PublicKeySerializer(public_key)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except PublicKey.DoesNotExist:
+                return Response({"error": "Публичный ключ не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        case 'POST':
+            if PublicKey.objects.filter(user=user).exists():
+                return Response({"error": "У пользователя уже есть публичный ключ"}, status=status.HTTP_400_BAD_REQUEST)
+
+            public_key = request.data.get("public_key")
+            PublicKey.objects.create(user=user, public_key=public_key)
+            return Response({}, status=status.HTTP_201_CREATED)

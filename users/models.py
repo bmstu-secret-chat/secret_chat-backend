@@ -51,6 +51,14 @@ class User(AbstractBaseUser, PermissionsMixin):
         return Chat.objects.filter(users=self, type=ChatTypeChoices.SECRET)
 
 
+class PublicKey(models.Model):
+    """
+    Модель для хранения публичных ключей.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    public_key = models.TextField()
+
+
 class UniqueUserStats(models.Model):
     """
     Модель для сбора статистики уникальных пользователей.

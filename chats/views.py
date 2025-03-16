@@ -84,6 +84,8 @@ def create_chat_view(request):
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)
 
+    create_secret_chat(str(chat_id), request.user_id, with_user_id, chat_type)
+
     serializer = ChatSerializer(chat, context={"user": user})
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 

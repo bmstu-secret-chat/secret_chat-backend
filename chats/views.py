@@ -45,6 +45,11 @@ def create_secret_chat_view(request):
     if not with_user.is_online:
         return Response({"error": "Собеседник не в сети"}, status=status.HTTP_423_LOCKED)
 
+    existing_chat = Chat.objects.filter(type=chat_type, users__id=user_id).filter(users__id=with_user_id).first()
+
+    if existing_chat:
+        return Response({"id": existing_chat.id}, status=status.HTTP_200_OK)
+
     user = User.objects.get(id=user_id)
     chat = Chat.objects.create(id=chat_id, type=chat_type)
     chat.users.add(user, with_user)

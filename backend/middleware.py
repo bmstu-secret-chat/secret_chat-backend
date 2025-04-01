@@ -30,6 +30,7 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
 
     ALLOWED_SECRET_PATHS = [
         r"^/api/backend/users/status/$",
+        r"^/api/backend/users/count-auth/$",
         r"^/api/backend/users/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/secret-chats/$",
         r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/users/$",
         r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$",

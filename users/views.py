@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.contrib.auth import authenticate, get_user_model
+from django.db.models import F
 from django.utils.timezone import now
 
 import environ
@@ -205,3 +206,26 @@ def key_view(request, user_id):
             public_key = request.data.get("public_key")
             PublicKey.objects.create(user=user, public_key=public_key)
             return Response({}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PATCH'])
+def count_auth_view(request):
+    """
+    Обновляет количество авторизаций.
+    """
+    user_id = request.data.get("user_id")
+    action = request.data.get("action")
+
+    if user_id is None or action is None:
+        return Response({"error": "Отсутствуют необходимые параметры"}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = User.objects.filter(id=user_id)
+    if not user.exists():
+        return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    if action == "login":
+        user.update(count_auth=F("count_auth") + 1)
+    else:
+        user.update(count_auth=F("count_auth") - 1)
+
+    return Response({"message": "Количество авторизаций пользователя обновлено"}, status=status.HTTP_200_OK)

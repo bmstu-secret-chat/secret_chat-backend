@@ -25,6 +25,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_online = models.BigIntegerField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
     sync_at = models.DateTimeField(blank=True, null=True)
+    count_auth = models.PositiveSmallIntegerField(default=0)
 
     objects = UserManager()
 

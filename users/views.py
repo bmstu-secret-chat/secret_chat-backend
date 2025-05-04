@@ -2,7 +2,7 @@ import json
 import uuid
 
 from django.contrib.auth import authenticate, get_user_model
-from django.db.models import F
+from django.core.cache import cache
 from django.utils.timezone import now
 
 import environ
@@ -208,24 +208,37 @@ def key_view(request, user_id):
             return Response({}, status=status.HTTP_201_CREATED)
 
 
-@api_view(['PATCH'])
-def count_auth_view(request):
+@api_view(['GET'])
+def private_key_get_view(request):
     """
-    Обновляет количество авторизаций.
+    Получение приватного ключа пользователя.
     """
-    user_id = request.data.get("user_id")
-    action = request.data.get("action")
+    username = request.data.get("username")
+    if not username:
+        return Response({"error": "username обязательное поле"})
 
-    if user_id is None or action is None:
-        return Response({"error": "Отсутствуют необходимые параметры"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователя с таким username не существует"})
 
-    user = User.objects.filter(id=user_id)
-    if not user.exists():
-        return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+    private_key = cache.get(f"user:{user.id}:key")
 
-    if action == "login":
-        user.update(count_auth=F("count_auth") + 1)
-    else:
-        user.update(count_auth=F("count_auth") - 1)
+    if not private_key:
+        return Response({"error": "private_key не найден"}, status=status.HTTP_404_NOT_FOUND)
 
-    return Response({"message": "Количество авторизаций пользователя обновлено"}, status=status.HTTP_200_OK)
+    return Response({"private_key": private_key}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def private_key_save_view(request):
+    """
+    Временное сохранение приватного ключа пользователя.
+    """
+    private_key = request.data.get("private_key")
+
+    if not private_key:
+        return Response({"error": "private_key обязательное поле"}, status=status.HTTP_400_BAD_REQUEST)
+
+    cache.set(f"user:{request.user_id}:key", private_key, timeout=60)
+    return Response({}, status=status.HTTP_200_OK)

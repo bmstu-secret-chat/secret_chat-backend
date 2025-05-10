@@ -213,7 +213,7 @@ def private_key_get_view(request):
     """
     Получение приватного ключа пользователя.
     """
-    username = request.data.get("username")
+    username = request.GET.get("username")
     if not username:
         return Response({"error": "username обязательное поле"})
 
@@ -225,7 +225,9 @@ def private_key_get_view(request):
     private_key = cache.get(f"user:{user.id}:key")
 
     if not private_key:
-        return Response({"error": "private_key не найден"}, status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"error": "Код не найден, зайдите в профиль на авторизованном устройстве"}, status=status.HTTP_404_NOT_FOUND
+        )
 
     return Response({"private_key": private_key}, status=status.HTTP_200_OK)
 

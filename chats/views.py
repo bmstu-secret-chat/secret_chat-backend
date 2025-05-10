@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from .choices import ChatTypeChoices
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
-from .utils import create_secret_chat, validate_chat_creation
+from .utils import clear_chat, create_secret_chat, validate_chat_creation
 
 User = get_user_model()
 
@@ -119,34 +119,41 @@ def get_chat_users_view(request, chat_id):
     return Response(user_ids, status=status.HTTP_200_OK)
 
 
-@api_view(["GET"])
+@api_view(["GET", "DELETE"])
 def messages_view(request, dialog_id):
     """
-    Получение сообщений чата.
+    Получение, удаление сообщений чата.
     """
-    first_message_index = request.GET.get("first_message_index")
-    count = request.GET.get("count")
+    match request.method:
+        case "GET":
+            first_message_index = request.GET.get("first_message_index")
+            count = request.GET.get("count")
 
-    try:
-        first_message_index = int(first_message_index) - 1
-        count = int(count)
+            try:
+                first_message_index = int(first_message_index) - 1
+                count = int(count)
 
-        if count <= 0:
-            return Response({"error": "count должен быть больше нуля"})
+                if count <= 0:
+                    return Response({"error": "count должен быть больше нуля"})
 
-        if first_message_index < 0:
-            first_message_index = 0
+                if first_message_index < 0:
+                    first_message_index = 0
 
-    except (TypeError, ValueError):
-        return Response({"error": "Параметры должны быть типа int"}, status=status.HTTP_400_BAD_REQUEST)
+            except (TypeError, ValueError):
+                return Response({"error": "Параметры должны быть типа int"}, status=status.HTTP_400_BAD_REQUEST)
 
-    last_message_index = first_message_index + count
+            last_message_index = first_message_index + count
 
-    messages = Message.objects.filter(dialog_id=dialog_id).order_by("serial_number")[
-        first_message_index:last_message_index
-    ]
-    serializer = MessageSerializer(messages, many=True)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+            messages = Message.objects.filter(dialog_id=dialog_id).order_by("serial_number")[
+                first_message_index:last_message_index
+            ]
+            serializer = MessageSerializer(messages, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        case "DELETE":
+            Message.objects.filter(dialog_id=dialog_id).delete()
+            clear_chat(dialog_id)
+            return Response({}, status=status.HTTP_200_OK)
 
 
 @api_view(["POST"])

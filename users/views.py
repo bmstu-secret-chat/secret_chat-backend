@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .metrics import update_metrics
-from .serializers import UserSerializer
+from .serializers import ShortUserSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -79,6 +79,22 @@ def exists_view(request):
         return Response({"user": serializer.data}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def user_by_name_view(request):
+    """
+    Получение пользователя по username.
+    """
+    username = request.GET.get("username")
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким username не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ShortUserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])

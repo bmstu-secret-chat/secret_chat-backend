@@ -14,7 +14,7 @@ from rest_framework.response import Response
 
 from .metrics import update_metrics
 from .models import PublicKey
-from .serializers import PublicKeySerializer, UserSerializer
+from .serializers import PublicKeySerializer, UserSerializer, ShortUserSerializer
 
 User = get_user_model()
 
@@ -81,6 +81,22 @@ def exists_view(request):
         return Response({"user": serializer.data}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def user_by_name_view(request):
+    """
+    Получение пользователя по username.
+    """
+    username = request.GET.get("username")
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким username не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ShortUserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -179,7 +195,6 @@ def secret_chats_view(request, user_id):
     secret_chat_ids = user.get_secret_chats().values_list("id", flat=True)
     return Response(secret_chat_ids, status=status.HTTP_200_OK)
 
-
 @api_view(['GET', 'POST'])
 def key_view(request, user_id):
     """
@@ -225,7 +240,7 @@ def private_key_get_view(request):
     private_key = cache.get(f"user:{user.id}:key")
 
     if not private_key:
-        return Response(
+         return Response(
             {"error": "Код не найден, зайдите в профиль на авторизованном устройстве"}, status=status.HTTP_404_NOT_FOUND
         )
 

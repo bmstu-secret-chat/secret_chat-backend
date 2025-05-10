@@ -129,7 +129,7 @@ def get_chat_users_view(request, chat_id):
 @api_view(["GET", "DELETE"])
 def messages_view(request, dialog_id):
     """
-    Получение сообщений чата.
+    Получение, удаление сообщений чата.
     """
     match request.method:
         case "GET":

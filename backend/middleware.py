@@ -27,6 +27,7 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
         "/api/backend/users/check/",
         "/api/backend/users/exists/",
         "/api/backend/users/user/by_name/",
+        "/api/backend/users/private-key/get/",
     ]
 
     ALLOWED_SECRET_PATHS = [

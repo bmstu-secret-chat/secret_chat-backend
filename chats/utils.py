@@ -57,7 +57,7 @@ def create_secret_chat(chat_id, user_id, with_user_id, chat_type):
     """
     Запрос на реалтайм для создания секретного чата.
     """
-    url = f"{NGINX_URL}{REALTIME_PATH}/messenger/secret-chat/create/"
+    url = f"{NGINX_URL}{REALTIME_PATH}/messenger/chat/create/"
     headers = {"X-Internal-Secret": INTERNAL_SECRET_KEY}
     data = {"chat_id": chat_id, "user_id": user_id, "with_user_id": with_user_id, "chat_type": chat_type}
 

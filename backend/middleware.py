@@ -37,6 +37,7 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
         r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/users/$",
         r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$",
         r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/message/$",
+        r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/messages/$",
     ]
 
     def process_request(self, request):
@@ -48,8 +49,6 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
 
             if secret_key == INTERNAL_SECRET_KEY:
                 return None
-            else:
-                return JsonResponse({"error": "Отсутствует секретный ключ"}, status=status.HTTP_403_FORBIDDEN)
 
         access_token = request.COOKIES.get("access")
 

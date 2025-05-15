@@ -63,15 +63,3 @@ def create_secret_chat(chat_id, user_id, with_user_id, chat_type):
 
     response = requests.post(url, headers=headers, json=data, verify=False)
     return response
-
-
-def clear_chat(chat_id):
-    """
-    Запрос на реалтайм для уведомления об очищении чата.
-    """
-    url = f"{NGINX_URL}{REALTIME_PATH}/messenger/chat/clear/"
-    headers = {"X-Internal-Secret": INTERNAL_SECRET_KEY}
-    data = {"chat_id": chat_id}
-
-    response = requests.post(url, headers=headers, json=data, verify=False)
-    return response

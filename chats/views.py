@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from .choices import ChatTypeChoices
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
-from .utils import clear_chat, create_secret_chat, validate_chat_creation
+from .utils import create_secret_chat, validate_chat_creation
 
 User = get_user_model()
 
@@ -159,7 +159,6 @@ def messages_view(request, dialog_id):
 
         case "DELETE":
             Message.objects.filter(dialog_id=dialog_id).delete()
-            clear_chat(dialog_id)
             return Response({}, status=status.HTTP_200_OK)
 
 

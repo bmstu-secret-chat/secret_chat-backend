@@ -142,6 +142,7 @@ AWS_STORAGE_BUCKET_NAME = 'images'
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': f"{env('ELASTIC_URL')}:{env('ELASTIC_PORT')}",
+        'http_auth': (env('ELASTIC_USERNAME'), env('ELASTIC_PASSWORD')),
     },
 }
 

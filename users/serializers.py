@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
+from .models import PublicKey
+
 User = get_user_model()
 
 
@@ -83,3 +85,21 @@ class UserSerializer(serializers.ModelSerializer):
         Создание пользователя.
         """
         return User.objects.create_user(**validated_data)
+
+
+class ShortUserSerializer(serializers.ModelSerializer):
+    """
+    Короткий сериализатор для модели User.
+    """
+    class Meta:
+        model = User
+        fields = ("id", "username", "avatar")
+
+
+class PublicKeySerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для модели PublicKey.
+    """
+    class Meta:
+        model = PublicKey
+        fields = ("public_key",)

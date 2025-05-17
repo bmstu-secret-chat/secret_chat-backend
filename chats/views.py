@@ -131,13 +131,21 @@ def messages_view(request, dialog_id):
     """
     Получение, удаление сообщений чата.
     """
+    try:
+        chat = Chat.objects.get(id=dialog_id)
+        if not chat.users.filter(id=request.user_id).exists():
+            return Response({"error": "Вы не являетесь участником этого чата"}, status=status.HTTP_403_FORBIDDEN)
+
+    except Chat.DoesNotExist:
+        return Response({"error": "Чат не найден"}, status=status.HTTP_404_NOT_FOUND)
+
     match request.method:
         case "GET":
             first_message_index = request.GET.get("first_message_index")
             count = request.GET.get("count")
 
             try:
-                first_message_index = int(first_message_index) - 1
+                first_message_index = int(first_message_index)
                 count = int(count)
 
                 if count <= 0:
@@ -151,10 +159,10 @@ def messages_view(request, dialog_id):
 
             last_message_index = first_message_index + count
 
-            messages = Message.objects.filter(dialog_id=dialog_id).order_by("serial_number")[
+            messages = Message.objects.filter(dialog_id=dialog_id).order_by("-serial_number")[
                 first_message_index:last_message_index
             ]
-            serializer = MessageSerializer(messages, many=True)
+            serializer = MessageSerializer(reversed(messages), many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
 
         case "DELETE":
@@ -218,6 +226,9 @@ def delete_chat_view(request, chat_id):
     """
     try:
         chat = Chat.objects.get(id=chat_id)
+        if not chat.users.filter(id=request.user_id).exists():
+            return Response({"error": "Вы не являетесь участником этого чата"}, status=status.HTTP_403_FORBIDDEN)
+
     except Chat.DoesNotExist:
         return Response({"error": f"Чат с таким id = {chat_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
 

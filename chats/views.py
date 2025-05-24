@@ -131,14 +131,6 @@ def messages_view(request, dialog_id):
     """
     Получение, удаление сообщений чата.
     """
-    try:
-        chat = Chat.objects.get(id=dialog_id)
-        if not chat.users.filter(id=request.user_id).exists():
-            return Response({"error": "Вы не являетесь участником этого чата"}, status=status.HTTP_403_FORBIDDEN)
-
-    except Chat.DoesNotExist:
-        return Response({"error": "Чат не найден"}, status=status.HTTP_404_NOT_FOUND)
-
     match request.method:
         case "GET":
             first_message_index = request.GET.get("first_message_index")
@@ -226,9 +218,6 @@ def delete_chat_view(request, chat_id):
     """
     try:
         chat = Chat.objects.get(id=chat_id)
-        if not chat.users.filter(id=request.user_id).exists():
-            return Response({"error": "Вы не являетесь участником этого чата"}, status=status.HTTP_403_FORBIDDEN)
-
     except Chat.DoesNotExist:
         return Response({"error": f"Чат с таким id = {chat_id} не найден"}, status=status.HTTP_404_NOT_FOUND)
 

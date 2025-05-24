@@ -50,7 +50,6 @@ services:
     environment:
       - discovery.type=${ELASTIC_DISCOVERY_TYPE}
       - ES_JAVA_OPTS=${ELASTIC_MEM_OPTS}
-      - xpack.security.enabled=${ELASTIC_SECURITY_ENABLED}
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
     ports:

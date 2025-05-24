@@ -2,6 +2,7 @@ import json
 import uuid
 
 from django.contrib.auth import authenticate, get_user_model
+from django.core.cache import cache
 from django.utils.timezone import now
 
 import environ
@@ -12,7 +13,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .metrics import update_metrics
-from .serializers import UserSerializer
+from .models import PublicKey
+from .serializers import PublicKeySerializer, UserSerializer, ShortUserSerializer
 
 User = get_user_model()
 
@@ -79,6 +81,22 @@ def exists_view(request):
         return Response({"user": serializer.data}, status=status.HTTP_200_OK)
     except User.DoesNotExist:
         return Response({"error": "Пользователь не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def user_by_name_view(request):
+    """
+    Получение пользователя по username.
+    """
+    username = request.GET.get("username")
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким username не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = ShortUserSerializer(user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -162,3 +180,82 @@ def status_view(request):
 def metrics_view(request):
     update_metrics()
     return ExportToDjangoView(request)
+
+
+@api_view(['GET'])
+def secret_chats_view(request, user_id):
+    """
+    Получение всех секретных чатов пользователя.
+    """
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким id не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    secret_chat_ids = user.get_secret_chats().values_list("id", flat=True)
+    return Response(secret_chat_ids, status=status.HTTP_200_OK)
+
+@api_view(['GET', 'POST'])
+def key_view(request, user_id):
+    """
+    Получение и сохранение публичного ключа пользователя.
+    """
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователь с таким id не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+    match request.method:
+        case 'GET':
+            try:
+                public_key = PublicKey.objects.get(user=user)
+                serializer = PublicKeySerializer(public_key)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            except PublicKey.DoesNotExist:
+                return Response({"error": "Публичный ключ не найден"}, status=status.HTTP_404_NOT_FOUND)
+
+        case 'POST':
+            if PublicKey.objects.filter(user=user).exists():
+                return Response({"error": "У пользователя уже есть публичный ключ"}, status=status.HTTP_400_BAD_REQUEST)
+
+            public_key = request.data.get("public_key")
+            PublicKey.objects.create(user=user, public_key=public_key)
+            return Response({}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def private_key_get_view(request):
+    """
+    Получение приватного ключа пользователя.
+    """
+    username = request.GET.get("username")
+    if not username:
+        return Response({"error": "username обязательное поле"})
+
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({"error": "Пользователя с таким username не существует"})
+
+    private_key = cache.get(f"user:{user.id}:key")
+
+    if not private_key:
+         return Response(
+            {"error": "Код не найден, зайдите в профиль на авторизованном устройстве"}, status=status.HTTP_404_NOT_FOUND
+        )
+
+    return Response({"private_key": private_key}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def private_key_save_view(request):
+    """
+    Временное сохранение приватного ключа пользователя.
+    """
+    private_key = request.data.get("private_key")
+
+    if not private_key:
+        return Response({"error": "private_key обязательное поле"}, status=status.HTTP_400_BAD_REQUEST)
+
+    cache.set(f"user:{request.user_id}:key", private_key, timeout=60)
+    return Response({}, status=status.HTTP_200_OK)

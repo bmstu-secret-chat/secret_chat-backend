@@ -1,4 +1,5 @@
 import json
+import re
 
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
@@ -25,23 +26,28 @@ class TokenAuthenticationMiddleware(MiddlewareMixin):
         "/api/backend/users/create/",
         "/api/backend/users/check/",
         "/api/backend/users/exists/",
+        "/api/backend/users/private-key/get",
+        "/api/backend/users/user/by_name/",
     ]
 
     ALLOWED_SECRET_PATHS = [
-        "/api/backend/users/status/",
+        r"^/api/backend/users/status/$",
+        r"^/api/backend/users/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/secret-chats/$",
+        r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/users/$",
+        r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/$",
+        r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/message/$",
+        r"^/api/backend/chats/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/messages/$",
     ]
 
     def process_request(self, request):
         if any(request.path_info.startswith(path) for path in self.ALLOWED_PATHS):
             return None
 
-        if any(request.path_info.startswith(path) for path in self.ALLOWED_SECRET_PATHS):
+        if any(re.match(pattern, request.path_info) for pattern in self.ALLOWED_SECRET_PATHS):
             secret_key = request.headers.get("X-Internal-Secret")
 
             if secret_key == INTERNAL_SECRET_KEY:
                 return None
-            else:
-                return JsonResponse({"error": "Отсутствует секретный ключ"}, status=status.HTTP_403_FORBIDDEN)
 
         access_token = request.COOKIES.get("access")
 
